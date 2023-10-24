@@ -11,7 +11,7 @@ abstract class Forme
     abstract public function calculerPerimetre();
 }
 
-class Cercle
+class Cercle extends Forme
 {
     public function calculerAire()
     {
@@ -28,7 +28,7 @@ class Cercle
     }
 }
 
-class Rectangle
+class Rectangle extends Forme
 {
     public function calculerAire()
     {
@@ -47,7 +47,7 @@ class Rectangle
     }
 }
 
-class Triangle
+class Triangle extends Forme
 {
     public function calculerAire()
     {

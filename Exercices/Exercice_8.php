@@ -20,61 +20,148 @@
 
 //Créez des instances de la classe "Personnage" pour représenter différents personnages jouables, puis créez des instances de la classe "Inventaire" pour chacun de ces personnages. Utilisez les méthodes de la classe "Inventaire" pour ajouter, afficher et supprimer des objets de l'inventaire des personnages.
 
+/**
+ * Class representing a character.
+ */
 class Personnage
 {
-    public $nom;
-    public $classe;
-    public $niveau = 1;
+    private string $nom;
+    private string $classe;
+    private int $niveau = 1;
+    private Inventaire $inventaire;
 
-    public function __construct($Nom, $Classe)
+    public function __construct(string $nom, string $classe)
     {
-        $this->nom = $Nom;
-        $this->classe = $Classe;
+        $this->nom = $nom;
+        $this->classe = $classe;
+        $this->inventaire = new Inventaire();
     }
 
-    public function afficher_infos()
+    public function afficher_infos(): void
     {
-        echo "Le nom du personnage est : " . $this->nom . "\n";
-        echo "La classe du personnage est : " . $this->classe . "\n";
-        echo "Le niveau du personnage est : " . $this->niveau . "\n";
+        echo "Nom: " . $this->nom . ", Classe: " . $this->classe . ", Niveau: " . $this->niveau . PHP_EOL;
+    }
+
+    public function getInventaire(): Inventaire
+    {
+        return $this->inventaire;
     }
 }
 
+/**
+ * Class representing an inventory.
+ */
 class Inventaire
 {
-    public $liste_objets = array();
+    private array $objets = [];
 
-    public function afficher_inventaire()
+    public function ajouter_objet(string $objet): void
     {
-        echo "Voici la liste des objets de l'inventaire : \n";
-        foreach ($this->liste_objets as $objet) {
-            echo $objet . "\n";
+        $this->objets[] = $objet;
+    }
+
+    public function afficher_inventaire(): void
+    {
+        echo "Inventaire: " . PHP_EOL;
+        foreach ($this->objets as $objet) {
+            echo "- " . $objet . PHP_EOL;
         }
     }
 
-    public function ajouter_objet($objet)
+    public function supprimer_objet(string $objet): void
     {
-        array_push($this->liste_objets, $objet);
-    }
-
-    public function supprimer_objet($objet)
-    {
-        $index = array_search($objet, $this->liste_objets);
-        unset($this->liste_objets[$index]);
+        if (($key = array_search($objet, $this->objets)) !== false) {
+            unset($this->objets[$key]);
+        }
     }
 }
 
-$personnage1 = new Personnage("Gandalf", "Mage");
-$personnage1->afficher_infos();
+$personnages = [];
 
-$inventaire1 = new Inventaire();
-$inventaire1->ajouter_objet("Potion de soin");
-$inventaire1->ajouter_objet("Potion de mana");
-$inventaire1->ajouter_objet("Potion de force");
-$inventaire1->ajouter_objet("Potion de vitesse");
+while (true) {
+    echo "\nMenu principal:\n";
+    echo "1. Créer un nouveau personnage\n";
+    echo "2. Afficher les personnages\n";
+    echo "3. Gérer l'inventaire d'un personnage\n";
+    echo "4. Quitter\n";
+    echo "Choix : ";
 
-$inventaire1->afficher_inventaire();
+    //Trim permet de supprimer les espaces en début et fin de chaîne
+    $choice = trim(readline());
 
-$inventaire1->supprimer_objet("Potion de force");
+    switch ($choice) {
+        case '1':
+            echo "Nom du personnage : ";
+            $nom = trim(readline());
+            echo "Classe du personnage : ";
+            $classe = trim(readline());
+            $personnage = new Personnage($nom, $classe);
+            $personnages[] = $personnage;
+            echo "Personnage créé!\n";
+            break;
+        case '2':
+            foreach ($personnages as $key => $p) {
+                echo ($key + 1) . ". ";
+                $p->afficher_infos();
+            }
+            break;
+        case '3':
+            if (!$personnages) {
+                echo "Aucun personnage créé. Veuillez d'abord en créer un.\n";
+                break;
+            }
+            foreach ($personnages as $key => $p) {
+                echo ($key + 1) . ". ";
+                $p->afficher_infos();
+            }
+            echo "Sélectionnez un personnage : ";
+            $selection = (int)trim(readline()) - 1;
 
-$inventaire1->afficher_inventaire();
+            if (!isset($personnages[$selection])) {
+                echo "Choix invalide!\n";
+                break;
+            }
+
+            $personnageSelected = $personnages[$selection];
+
+            while (true) {
+                echo "\nMenu inventaire:\n";
+                echo "1. Ajouter un objet\n";
+                echo "2. Supprimer un objet\n";
+                echo "3. Afficher l'inventaire\n";
+                echo "4. Retour au menu principal\n";
+                echo "Choix : ";
+
+                $choiceInventaire = trim(readline());
+
+                switch ($choiceInventaire) {
+                    case '1':
+                        echo "Nom de l'objet : ";
+                        $objet = trim(readline());
+                        $personnageSelected->getInventaire()->ajouter_objet($objet);
+                        echo "Objet ajouté!\n";
+                        break;
+                    case '2':
+                        $personnageSelected->getInventaire()->afficher_inventaire();
+                        echo "Nom de l'objet à supprimer : ";
+                        $objet = trim(readline());
+                        $personnageSelected->getInventaire()->supprimer_objet($objet);
+                        echo "Objet supprimé!\n";
+                        break;
+                    case '3':
+                        $personnageSelected->getInventaire()->afficher_inventaire();
+                        break;
+                    case '4':
+                        break 2;  // Sortir de la boucle du sous-menu
+                    default:
+                        echo "Choix invalide.\n";
+                }
+            }
+            break;
+        case '4':
+            echo "Au revoir!\n";
+            exit;
+        default:
+            echo "Choix invalide.\n";
+    }
+}
