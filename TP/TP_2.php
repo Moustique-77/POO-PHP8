@@ -225,7 +225,7 @@ class Game
      * @param array $players
      * @param GameDisplay $display
      */
-    public function __construct(array $questions, array $players, GameDisplay $display)
+    public function __construct(array $questions, $players, GameDisplay $display)
     {
         $this->questions = $questions;
         $this->players = $players;
@@ -233,11 +233,33 @@ class Game
     }
 
     /**
-     * Starts the game.
+     * Adds a player to the game.
      */
-    public function start(): void
+    public function addPlayer(): void
     {
-        foreach ($this->players as $player) {
+        $players = [];
+        $inscription = true;
+        echo "\033\143"; //clear the screen
+        while ($inscription) {
+            echo 'Player n°' . (count($players) + 1) . ' inscription (type "start" to start the game):';
+            $playerName = trim(fgets(STDIN));
+
+            if ($playerName == 'start') {
+                $inscription = false;
+                echo "\033\143"; //clear the screen
+                Game::start($players);
+            } else {
+                $players[] = new Player($playerName);
+            }
+        }
+    }
+
+    /**
+     * Starts the game, displays the questions and the answers, and handles the player input.
+     */
+    public function start($players): void
+    {
+        foreach ($players as $player) {
             $this->display->displayPlayer($player->getName());
             $this->display->displayScore($player->getScore());
 
@@ -245,7 +267,7 @@ class Game
                 $this->display->displayQuestion($question);
                 $this->display->displayAnswers($question->getAnswers());
 
-                echo 'Your answer (you have 10 seconds):';
+                echo PHP_EOL . 'Your answer (you have 10 seconds):';
                 $answer = $this->getAnswerWithTimeout(10);
 
                 if ($answer !== null) {
@@ -262,22 +284,30 @@ class Game
         }
 
         //Display the final score for each player
-        foreach ($this->players as $player) {
+        echo "\033\143"; //clear the screen
+        echo 'Final score :' . PHP_EOL . PHP_EOL;
+        foreach ($players as $player) {
             $this->display->displayPlayer($player->getName());
             $this->display->displayScore($player->getScore());
         }
-
         $this->display->displayGameOver();
     }
 
+    /**
+     * Returns the answer with a timeout.
+     *
+     * @param int $seconds
+     *
+     * @return string|null
+     */
     private function getAnswerWithTimeout(int $seconds): ?string
     {
-        $read = [STDIN];
-        $write = $except = null;
-        $result = stream_select($read, $write, $except, $seconds);
+        $read = [STDIN]; // STDIN is a special constant that represents keyboard input
+        $write = $except = null; // these parameters are not used
+        $result = stream_select($read, $write, $except, $seconds); // wait until something happens on STDIN for $seconds seconds
 
         if ($result === false) {
-            throw new Exception('stream_select failed');
+            throw new RuntimeException('stream_select failed');
         }
 
         if ($result === 0) {
@@ -300,7 +330,7 @@ class ConsoleGameDisplay implements GameDisplay
      */
     public function displayQuestion(Question $question): void
     {
-        echo $question->getText() . PHP_EOL;
+        echo $question->getText() . PHP_EOL . PHP_EOL;
     }
 
     /**
@@ -332,7 +362,7 @@ class ConsoleGameDisplay implements GameDisplay
      */
     public function displayPlayer(string $player): void
     {
-        echo $player . PHP_EOL;
+        echo 'Player : ' . $player . PHP_EOL;
     }
 
     /**
@@ -342,7 +372,7 @@ class ConsoleGameDisplay implements GameDisplay
      */
     public function displayScore(int $score): void
     {
-        echo ("Score : " . $score . PHP_EOL);
+        echo ('Score : ' . $score . PHP_EOL . PHP_EOL);
     }
 
     /**
@@ -354,17 +384,12 @@ class ConsoleGameDisplay implements GameDisplay
     }
 }
 
-$player1 = new Player('Player 1');
-$player2 = new Player('Player 2');
-
-$player = [$player1, $player2];
-
 $question1 = new Question('What is the capital of France?', ['1' => 'Paris', '2' => 'London', '3' => 'Rome'], 1);
 $question2 = new Question('Who is the creator of PHP?', ['1' => 'Rasmus Lerdorf', '2' => 'Bill Gates', '3' => 'Steve Jobs'], 1);
 $question3 = new Question('What is the result of 2+2?', ['1' => '4', '2' => '5', '3' => '6'], 1);
 
 $questions = [$question1, $question2, $question3];
 
-$game = new Game($questions, [$player1, $player2], new ConsoleGameDisplay());
+$game = new Game($questions, [], new ConsoleGameDisplay());
 
-$game->start();
+$game->addPlayer();
