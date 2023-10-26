@@ -38,7 +38,7 @@ class Character
 class Hero extends Character
 {
     private $xp = 0;
-    private $level = 1;
+    private $level = 10;
 
     public function __construct($name, $life, $power)
     {
@@ -109,13 +109,13 @@ class Hero extends Character
     /**
      * Die method
      */
-    public function die($heros, $enemys, $player, $display, $enemy)
+    public function die($heros, $enemies, $player, $display, $enemy)
     {
         if ($this->life <= 0) {
             echo "\033\143"; //clear the screen
             echo PHP_EOL . "Vous êtes mort !" . PHP_EOL . PHP_EOL;
 
-            $display->displayEndMenu($heros, $enemys, $player, $display, $enemy);
+            $display->displayEndMenu($heros, $enemies, $player, $display, $enemy);
         }
     }
 }
@@ -204,13 +204,9 @@ class Main
         $vegeta = new Hero("Vegeta", 100, 20);
         $heros = [$goku, $vegeta];
 
-        $freezer = new Enemy("Freezer", 100, 20);
-        $cell = new Enemy("Cell", 200, 30);
-        $jidBuu = new Enemy("JidBuu", 300, 40);
-        $enemys = [$freezer, $cell, $jidBuu];
+        $enemies = [];
 
-
-        $this->game($player, $display, $heros, $enemys, $main);
+        $this->game($player, $display, $heros, $enemies, $main);
     }
 
     /**
@@ -224,19 +220,24 @@ class Main
         $name = readline();
 
         $player = new Hero($name, 10000, 20);
+
+        echo "\033\143"; //clear the screen
+        echo "Vous avez créé votre héro : " . $player->getName() . PHP_EOL . PHP_EOL;
+        echo "Vous allez devoir affronter des vagues d'ennemis, les vagues seront de plus en plus difficiles." . PHP_EOL . PHP_EOL;
+        echo "Lors de vos combats, vous gagnerez de l'expérience qui vous permet de monter en niveau afin de débloquer de nouvelle attaque !" . PHP_EOL . PHP_EOL;
+        echo "Bonne chance ! " . PHP_EOL . PHP_EOL;
+        echo "Appuyez sur entrée pour commencer votre aventure...";
+        readline();
         return $player;
     }
 
     /**
      * game method is the main game
      */
-    public function game($player, $display, $heros, $enemys, $main)
+    public function game($player, $display, $heros, $enemies, $main)
     {
-        echo "\033\143"; //clear the screen
-        echo "Vous allez devoir affronter des vagues d'ennemis !" . PHP_EOL . PHP_EOL;
-        echo "Les vagues seront de plus en plus difficiles !" . PHP_EOL;
-        echo "Lors de vos combats, vous gagnerez de l'expérience qui vous permet de monté en niveau afin de débloquer de nouvelle attaque !" . PHP_EOL . PHP_EOL;
 
+        echo "\033\143"; //clear the screen
         echo "1 - Combattre" . PHP_EOL;
         echo "2 - Fruire dans la forêt " . PHP_EOL . PHP_EOL;
         $awser = readline("Que voulez-vous faire ? : ");
@@ -244,7 +245,7 @@ class Main
         switch ($awser) {
             case "1":
                 echo "\033\143"; //clear the screen
-                $this->fight($player, $display, $heros, $enemys, $main);
+                $this->fight($player, $display, $heros, $enemies, $main);
                 break;
             case "2":
                 echo "Vous êtes lache !";
@@ -252,7 +253,7 @@ class Main
                 break;
             default:
                 echo "Veuillez choisir une option valide !";
-                $this->game($player, $display, $heros, $enemys, $main);
+                $this->game($player, $display, $heros, $enemies, $main);
                 break;
         }
     }
@@ -263,25 +264,59 @@ class Main
      * @param Hero $player
      * @param Display $display
      * @param Hero $heros
-     * @param array $enemys
+     * @param array $enemies
      */
-    public function fight($player, $display, $heros, $enemys, $main)
+    public function fight($player, $display, $heros, $enemies, $main)
     {
         $enemysList = [];
+
+        /**
+         * createEnemy method for create a enemy
+         */
+        function createEnemy($type, $count)
+        {
+            $enemies = [];
+
+            switch ($type) {
+                case 'Freezer':
+                    for ($i = 0; $i < $count; $i++) {
+                        $enemies[] = new Enemy("Freezer", 100, 20);
+                    }
+                    break;
+
+                case 'Cell':
+                    for ($i = 0; $i < $count; $i++) {
+                        $enemies[] = new Enemy("Cell", 200, 30);
+                    }
+                    break;
+
+                case 'JidBuu':
+                    for ($i = 0; $i < $count; $i++) {
+                        $enemies[] = new Enemy("JidBuu", 300, 40);
+                    }
+                    break;
+
+                default:
+                    echo "Type d'ennemi non reconnu.";
+                    break;
+            }
+
+            return $enemies;
+        }
 
         //Increase number of fight and add enemy to list
         switch ($this->numberOfFight) {
             case 0:
-                array_push($enemysList, $enemys[0]);
+                array_push($enemysList, createEnemy('Freezer', 1));
                 break;
             case 1:
-                array_push($enemysList, $enemys[1]);
+                array_push($enemysList, createEnemy('Cell', 1));
                 break;
             case 2:
-                array_push($enemysList, $enemys[0], $enemys[1]);
+                array_push($enemysList, createEnemy('Freezer', 1), createEnemy('Cell', 1));
                 break;
             case 3:
-                array_push($enemysList, $enemys[0], $enemys[1], $enemys[2]);
+                array_push($enemysList, createEnemy('Freezer', 1), createEnemy('Cell', 1), createEnemy('JidBuu', 1));
                 break;
         }
 
@@ -298,8 +333,9 @@ class Main
 
             //Choose a enemy to fight, only if enemy list is more than 1
             if (sizeof($enemysList) > 1) {
-                $toAttack = readline("Quel ennemi voulez-vous combattre ? : ");
+                $toAttack = readline(PHP_EOL . "Quel ennemi voulez-vous combattre ? : ");
                 $enemy = $enemysList[$toAttack - 1];
+                echo "Vous avez choisi de combattre : " . $enemy->getName() . PHP_EOL;
             } else {
                 $enemy = $enemysList[0];
             }
@@ -317,21 +353,21 @@ class Main
                     $multiplier = 1;
                     $diviser = 1;
                     $player->atack($enemy, $multiplier);
-                    $this->allAttack($enemys, $player, $diviser);
+                    $this->allAttack($enemies, $player, $diviser);
                     break;
                 case 2:
                     if ($player->getLevel() >= 2) {
                         $multiplier = 1.2;
                         $diviser = 1;
                         $player->atack($enemy, $multiplier);
-                        $this->allAttack($enemys, $player, $diviser);
+                        $this->allAttack($enemies, $player, $diviser);
                     } else {
                         echo "Vous n'avez pas le niveau requis ! (niveau 2)";
                     }
                     break;
                 case 3:
                     $diviser = 1.3;
-                    $this->allAttack($enemys, $player, $diviser);
+                    $this->allAttack($enemies, $player, $diviser);
                     break;
                 default:
                     echo "Veuillez choisir une option valide !";
@@ -350,27 +386,27 @@ class Main
             //Check if all enemy is dead
             if (empty($enemysList)) {
                 $this->numberOfFight = +1;
-                $this->game($heros, $enemys, $player, $display, $main);
+                $this->game($player, $display, $heros, $enemies, $main);
                 $isFight = false;
             }
 
             //Check if player is dead
             if ($player->getLife() <= 0) {
                 $isFight = false;
-                $player->die($heros, $enemys, $player, $display, $enemy);
+                $player->die($heros, $enemies, $player, $display, $enemy);
             }
 
             //Check if player win
-            $this->win($heros, $enemys, $player, $display, $enemy);
+            $this->win($heros, $enemies, $player, $display, $enemy);
         }
     }
 
     /**
      * allAttack method for attack all enemy
      */
-    private function allAttack($enemys, $player, $diviser)
+    private function allAttack($enemies, $player, $diviser)
     {
-        foreach ($enemys as $enemy) {
+        foreach ($enemies as $enemy) {
             $enemy->atack($player, $diviser);
         }
     }
@@ -390,11 +426,11 @@ class Main
     /**
      * win method for check if player finish the game
      */
-    public function win($heros, $enemys, $player, $display, $enemy)
+    public function win($heros, $enemies, $player, $display, $enemy)
     {
         if ($this->numberOfFight == 4) {
             echo "Vous avez gagné !";
-            $display->displayEndMenu($heros, $enemys, $player, $display, $enemy);
+            $display->displayEndMenu($heros, $enemies, $player, $display, $enemy);
             exit;
         }
     }
@@ -427,12 +463,11 @@ class Display
      */
     public function displayEnemyStat($enemysList)
     {
-        //Check if enemy list is empty, if not display enemy list
-        if (!empty($enemysList)) {
-            foreach ($enemysList as $enemy) {
-                $i = 1;
-                echo $i . " - " . $enemy->getName() . " " . $enemy->getLife() . " PV" . PHP_EOL;
-                $i++;
+        // Vérifiez si la liste est un tableau et n'est pas vide
+        if (is_array($enemysList) && !empty($enemysList)) {
+            for ($i = 0; $i < count($enemysList); $i++) {
+                $s = $i + 1;
+                echo "$s - " . $enemysList[$i]->getName() . " " . $enemysList[$i]->getLife() . " PV" . PHP_EOL;
             }
         }
     }
@@ -440,7 +475,7 @@ class Display
     /**
      * displayEndMenu method for display end menu (player is dead or win)
      */
-    public function displayEndMenu($main, $heros, $enemys, $player, $display, $enemy)
+    public function displayEndMenu($main, $heros, $enemies, $player, $display, $enemy)
     {
         echo "Vous pouvez :" . PHP_EOL . PHP_EOL;
 
@@ -452,7 +487,7 @@ class Display
 
         switch ($awser) {
             case "1":
-                $main->fight($heros, $enemys, $player, $display);
+                $main->fight($heros, $enemies, $player, $display);
                 break;
             case "2":
                 $main->startGame();
@@ -466,10 +501,18 @@ class Display
                 break;
             default:
                 echo "Veuillez choisir une option valide !";
-                $this->displayEndMenu($main, $heros, $enemys, $player, $display, $enemy);
+                $this->displayEndMenu($main, $heros, $enemies, $player, $display, $enemy);
                 break;
         }
     }
+}
+
+/**
+ * Save class
+ */
+class Save
+{
+    //TODO
 }
 
 /**
@@ -484,7 +527,7 @@ class Welcome
     public function welcome()
     {
         echo "\033\143"; //clear the screen
-        echo "Bienvenue dans Dragon Ball !" . PHP_EOL . PHP_EOL;
+        echo "Bienvenue dans Dragon Ball CLI by Enzo & Téo !" . PHP_EOL . PHP_EOL;
         echo "1 - Creér une partie" . PHP_EOL;
         echo "2 - Charger une partie" . PHP_EOL;
         echo "3 - Quitter" . PHP_EOL . PHP_EOL;
@@ -510,14 +553,6 @@ class Welcome
                 break;
         }
     }
-}
-
-/**
- * Save class
- */
-class Save
-{
-    //TODO
 }
 
 $welcome = new Welcome();
