@@ -38,7 +38,7 @@ class Character
 class Hero extends Character
 {
     private $xp = 0;
-    private $level = 0;
+    private $level = 1;
 
     public function __construct($name, $life, $power)
     {
@@ -109,38 +109,13 @@ class Hero extends Character
     /**
      * Die method
      */
-    public function die($heros, $enemys, $player, $display)
+    public function die($heros, $enemys, $player, $display, $enemy)
     {
         if ($this->life <= 0) {
-            echo PHP_EOL . "Vous êtes mort !";
+            echo "\033\143"; //clear the screen
+            echo PHP_EOL . "Vous êtes mort !" . PHP_EOL . PHP_EOL;
 
-            echo "Vous pouvez :" . PHP_EOL . PHP_EOL;
-
-            echo "1 - Recommencer le combat" . PHP_EOL;
-            echo "2 - Recommencer une partie" . PHP_EOL;
-            echo "3 - Sauvegarder la partie actel" . PHP_EOL;
-            echo "4 - Quitter" . PHP_EOL;
-            $awser = readline("Que voulez-vous faire ? : ");
-
-            switch ($awser) {
-                case "1":
-                    Main::fight($heros, $enemys, $player, $display);
-                    break;
-                case "2":
-                    Main::startGame();
-                    break;
-                case "3":
-                    //TODO
-                    break;
-                case "4":
-                    echo "A bientôt !";
-                    exit;
-                    break;
-                default:
-                    echo "Veuillez choisir une option valide !";
-                    $this->die();
-                    break;
-            }
+            $display->displayEndMenu($heros, $enemys, $player, $display, $enemy);
         }
     }
 }
@@ -189,7 +164,7 @@ class Enemy extends Character
      */
     public function atack(Hero $hero, $diviser)
     {
-        $hero->setLife($hero->getLife() + $this->power * $diviser - $this->power);
+        $hero->setLife($hero->getLife() - $this->power * $diviser);
     }
 
     /**
@@ -205,22 +180,24 @@ class Enemy extends Character
     /**
      * Die method
      */
-    public function die(Enemy $enemy, $player)
+    public function die(Enemy $enemy, $player, $main)
     {
-        echo "Vous avez tué l'ennemi : " . $enemy->getName() . "!" . PHP_EOL;
+        echo PHP_EOL . "Vous avez tué l'ennemi : " . $enemy->getName() . "!" . PHP_EOL;
         $main->xpAndLevel($player);
     }
 }
 
 class Main
 {
+    private $numberOfFight = 0;
+
     /**
      * startGame method for start a new game
      */
-    public function startGame()
+    public function startGame($main)
     {
         $display = new Display();
-        $player = $this->createCharacter($display);
+        $player = $this->createCharacter();
 
         //HARD CODE HERO AND ENEMY FOR TEST
         $goku = new Hero("Goku", 100, 20);
@@ -232,26 +209,28 @@ class Main
         $jidBuu = new Enemy("JidBuu", 300, 40);
         $enemys = [$freezer, $cell, $jidBuu];
 
-        $this->game($heros, $enemys, $player, $display);
+
+        $this->game($player, $display, $heros, $enemys, $main);
     }
 
     /**
      * createCharacter method for create a Hero
      */
-    public function createCharacter($display)
+    public function createCharacter()
     {
         echo "\033\143"; //clear the screen
         echo "Nouvelle partie !" . PHP_EOL . PHP_EOL;
         echo "Entrez le nom de votre héros : ";
         $name = readline();
 
-        $player = new Hero($name, 100, 20);
-
-        $display->displayPlayerStat($player);
+        $player = new Hero($name, 10000, 20);
         return $player;
     }
 
-    public function game($heros, $enemys, $player, $display)
+    /**
+     * game method is the main game
+     */
+    public function game($player, $display, $heros, $enemys, $main)
     {
         echo "\033\143"; //clear the screen
         echo "Vous allez devoir affronter des vagues d'ennemis !" . PHP_EOL . PHP_EOL;
@@ -265,7 +244,7 @@ class Main
         switch ($awser) {
             case "1":
                 echo "\033\143"; //clear the screen
-                $this->fight($heros, $enemys, $player, $display);
+                $this->fight($player, $display, $heros, $enemys, $main);
                 break;
             case "2":
                 echo "Vous êtes lache !";
@@ -273,18 +252,25 @@ class Main
                 break;
             default:
                 echo "Veuillez choisir une option valide !";
-                $this->game($heros, $enemys, $player, $display);
+                $this->game($player, $display, $heros, $enemys, $main);
                 break;
         }
     }
 
-    public static function fight($heros, $enemys, $player, $display)
+    /**
+     * fight method for fight
+     * 
+     * @param Hero $player
+     * @param Display $display
+     * @param Hero $heros
+     * @param array $enemys
+     */
+    public function fight($player, $display, $heros, $enemys, $main)
     {
-        $numberOfFight = 0;
         $enemysList = [];
 
         //Increase number of fight and add enemy to list
-        switch ($numberOfFight) {
+        switch ($this->numberOfFight) {
             case 0:
                 array_push($enemysList, $enemys[0]);
                 break;
@@ -301,6 +287,7 @@ class Main
 
         $isFight = true;
 
+        //Fight loop
         while ($isFight) {
 
             //Display enemy list
@@ -328,14 +315,14 @@ class Main
             switch ($choice) {
                 case 1:
                     $multiplier = 1;
-                    $diviser = 0;
+                    $diviser = 1;
                     $player->atack($enemy, $multiplier);
                     $this->allAttack($enemys, $player, $diviser);
                     break;
                 case 2:
                     if ($player->getLevel() >= 2) {
                         $multiplier = 1.2;
-                        $diviser = 0;
+                        $diviser = 1;
                         $player->atack($enemy, $multiplier);
                         $this->allAttack($enemys, $player, $diviser);
                     } else {
@@ -356,23 +343,31 @@ class Main
                 if ($enemy->getLife() <= 0) {
                     $key = array_search($enemy, $enemysList);
                     unset($enemysList[$key]);
-                    $enemy->die($enemy, $player);
+                    $enemy->die($enemy, $player, $main);
                 }
             }
 
             //Check if all enemy is dead
             if (empty($enemysList)) {
+                $this->numberOfFight = +1;
+                $this->game($heros, $enemys, $player, $display, $main);
                 $isFight = false;
             }
 
             //Check if player is dead
             if ($player->getLife() <= 0) {
                 $isFight = false;
-                $player->die($heros, $enemys, $player, $display);
+                $player->die($heros, $enemys, $player, $display, $enemy);
             }
+
+            //Check if player win
+            $this->win($heros, $enemys, $player, $display, $enemy);
         }
     }
 
+    /**
+     * allAttack method for attack all enemy
+     */
     private function allAttack($enemys, $player, $diviser)
     {
         foreach ($enemys as $enemy) {
@@ -380,33 +375,55 @@ class Main
         }
     }
 
-    public function xpAndLevel(Hero $hero)
+    /**
+     * xpAndLevel method for increase xp and level
+     */
+    public function xpAndLevel(Hero $player)
     {
-        $hero->setXp($hero->getXp() + 50);
-        if ($hero->getXp() >= 100) {
-            $hero->setLevel($hero->getLevel() + 1);
-            $hero->setXp(0);
+        $player->setXp($player->getXp() + 50);
+        if ($player->getXp() >= 100) {
+            $player->setLevel($player->getLevel() + 1);
+            $player->setXp(0);
+        }
+    }
+
+    /**
+     * win method for check if player finish the game
+     */
+    public function win($heros, $enemys, $player, $display, $enemy)
+    {
+        if ($this->numberOfFight == 4) {
+            echo "Vous avez gagné !";
+            $display->displayEndMenu($heros, $enemys, $player, $display, $enemy);
+            exit;
         }
     }
 }
 
-
+/**
+ * Display class
+ */
 class Display
 {
-    public function displayPlayerStat(Hero $hero)
+    /**
+     * Display player stat
+     * 
+     * @param Hero $hero
+     */
+    public function displayPlayerStat($player)
     {
         echo PHP_EOL . "Vos informations : " . PHP_EOL;
-        echo PHP_EOL . "Nom : " . $hero->getName() . PHP_EOL;
-        echo "Vie : " . $hero->getLife() . PHP_EOL;
-        echo "Puissance : " . $hero->getPower() . PHP_EOL;
-        echo "Niveau : " . $hero->getLevel() . PHP_EOL;
-        echo "Expérience : " . $hero->getXp() . "/ 100" . PHP_EOL . PHP_EOL;
+        echo PHP_EOL . "Nom : " . $player->getName() . PHP_EOL;
+        echo "Vie : " . $player->getLife() . PHP_EOL;
+        echo "Puissance : " . $player->getPower() . PHP_EOL;
+        echo "Niveau : " . $player->getLevel() . PHP_EOL;
+        echo "Expérience : " . $player->getXp() . " / 100" . PHP_EOL . PHP_EOL;
     }
 
     /**
      * Display enemy list
      * 
-     * @param Enemy $enemys
+     * @param Enemy $enemysList
      */
     public function displayEnemyStat($enemysList)
     {
@@ -419,10 +436,51 @@ class Display
             }
         }
     }
+
+    /**
+     * displayEndMenu method for display end menu (player is dead or win)
+     */
+    public function displayEndMenu($main, $heros, $enemys, $player, $display, $enemy)
+    {
+        echo "Vous pouvez :" . PHP_EOL . PHP_EOL;
+
+        echo "1 - Recommencer le combat" . PHP_EOL;
+        echo "2 - Recommencer une partie" . PHP_EOL;
+        echo "3 - Sauvegarder la partie" . PHP_EOL;
+        echo "4 - Quitter" . PHP_EOL;
+        $awser = readline("Que voulez-vous faire ? : ");
+
+        switch ($awser) {
+            case "1":
+                $main->fight($heros, $enemys, $player, $display);
+                break;
+            case "2":
+                $main->startGame();
+                break;
+            case "3":
+                //TODO
+                break;
+            case "4":
+                echo "A bientôt !";
+                exit;
+                break;
+            default:
+                echo "Veuillez choisir une option valide !";
+                $this->displayEndMenu($main, $heros, $enemys, $player, $display, $enemy);
+                break;
+        }
+    }
 }
 
+/**
+ * Welcome class
+ */
 class Welcome
 {
+
+    /**
+     * welcome method for display welcome menu
+     */
     public function welcome()
     {
         echo "\033\143"; //clear the screen
@@ -435,11 +493,12 @@ class Welcome
         switch ($awser) {
             case "1":
                 echo "\033\143"; //clear the screen
+                global $main; //It's a global variable for use e
                 $main = new Main();
-                $main->startGame();
+                $main->startGame($main);
                 break;
             case "2":
-                //$this->loadGame();
+                //TODO
                 break;
             case "3":
                 echo "A bientôt !";
@@ -451,6 +510,14 @@ class Welcome
                 break;
         }
     }
+}
+
+/**
+ * Save class
+ */
+class Save
+{
+    //TODO
 }
 
 $welcome = new Welcome();
