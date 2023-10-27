@@ -109,12 +109,12 @@ class Hero extends Character
     /**
      * Die method
      */
-    public function die($heros, $enemies, $player, $display, $enemy)
+    public function die($player, $display, $main)
     {
         if ($this->life <= 0) {
             echo "\033\143"; //clear the screen
             $display->centerTxt(PHP_EOL . "Vous êtes mort !" . PHP_EOL . PHP_EOL);
-            $display->displayEndMenu($heros, $enemies, $player, $display, $enemy);
+            $display->displayEndMenu($main, $player, $display);
         }
     }
 }
@@ -193,6 +193,21 @@ class Main
 {
     private $numberOfFight = 0;
 
+    public function __construct()
+    {
+        $this->numberOfFight = 0;
+    }
+
+    public function getNumberOfFight()
+    {
+        return $this->numberOfFight;
+    }
+
+    public function setNumberOfFight($numberOfFight)
+    {
+        $this->numberOfFight = $numberOfFight;
+    }
+
     /**
      * startGame method for start a new game
      */
@@ -208,7 +223,7 @@ class Main
 
         $enemies = [];
 
-        $this->game($player, $display, $heros, $enemies, $main);
+        $this->game($player, $display, $main);
     }
 
     /**
@@ -239,31 +254,37 @@ class Main
     /**
      * game method is the main game
      */
-    public function game($player, $display, $heros, $enemies, $main)
+    public function game($player, $display, $main)
     {
         //Check if player win
         if ($this->numberOfFight == 4) {
-            $this->win($heros, $enemies, $player, $display, $main);
+            $this->win($display, $main);
         }
 
         echo "\033\143"; //clear the screen
         $display->centerTxt("1 - Combattre" . PHP_EOL . PHP_EOL);
-        $display->centerTxt("2 - Fuire dans la forêt" . PHP_EOL . PHP_EOL);
+        $display->centerTxt("2 - Sauvegarder la partie" . PHP_EOL . PHP_EOL);
+        $display->centerTxt("3 - Fuire dans la forêt" . PHP_EOL . PHP_EOL);
         $display->centerTxt("Que voulez-vous faire ? : ");
         $awser = readline();
 
         switch ($awser) {
             case "1":
                 echo "\033\143"; //clear the screen
-                $this->fight($player, $display, $heros, $enemies, $main);
+                $this->fight($player, $display, $main);
                 break;
             case "2":
+                echo "\033\143"; //clear the screen
+                $save = new Save();
+                $save->save($player, $display, $main);
+                break;
+            case "3":
                 $display->centerTxt("Vous êtes lache !");
                 exit;
                 break;
             default:
                 $display->centerTxt("Veillez choisir une option valide !");
-                $this->game($player, $display, $heros, $enemies, $main);
+                $this->game($player, $display, $main);
                 break;
         }
     }
@@ -309,7 +330,7 @@ class Main
      * @param Hero $heros
      * @param array $enemies
      */
-    public function fight($player, $display, $heros, $enemies, $main)
+    public function fight($player, $display, $main)
     {
         $enemiesList = [];
 
@@ -372,7 +393,7 @@ class Main
             $display->centerTxt("2 - Kamehameha (niveau 2 requis)" . PHP_EOL);
             $display->centerTxt("3 - Energy Shield" . PHP_EOL);
 
-            $choice = readline("Que voulez-vous faire?");
+            $choice = readline("Que voulez-vous faire ? : ");
 
             switch ($choice) {
                 case 1:
@@ -414,14 +435,14 @@ class Main
             //Check if all enemy is dead
             if (empty($enemiesList)) {
                 $this->numberOfFight++;
-                $this->game($player, $display, $heros, $enemies, $main);
+                $this->game($player, $display,  $main);
                 $isFight = false;
             }
 
             //Check if player is dead
             if ($player->getLife() <= 0) {
                 $isFight = false;
-                $player->die($heros, $enemies, $player, $display, $enemy);
+                $player->die($player, $display, $main);
             }
         }
     }
@@ -453,12 +474,26 @@ class Main
     /**
      * win method for check if player finish the game
      */
-    public function win($heros, $enemies, $player, $display, $main)
+    public function win($display, $main)
     {
         echo "\033\143"; //clear the screen
         $display->centerTxt("Vous avez gagné!" . PHP_EOL . PHP_EOL);
-        $display->displayEndMenu($main, $heros, $enemies, $player, $display);
-        exit;
+        $display->centerTxt("Vous pouvez :" . PHP_EOL . PHP_EOL);
+        $display->centerTxt("1 - Recommencer une partie." . PHP_EOL);
+        $display->centerTxt("2 - Quitter le jeux." . PHP_EOL);
+
+        $awser = readline("Que voulez-vous faire ? : ");
+
+        switch ($awser) {
+            case "1":
+                $main->setNumberOfFight(0);
+                $main->startGame($main, $display);
+                break;
+            case "2":
+                echo "Merci d'avoir jouer, a bientôt !";
+                exit;
+                break;
+        }
     }
 }
 
@@ -500,9 +535,9 @@ class Display
     }
 
     /**
-     * displayEndMenu method for display end menu (player is dead or win)
+     * displayEndMenu method for display end menu
      */
-    public function displayEndMenu($main, $heros, $enemies, $player, $display)
+    public function displayEndMenu($main, $player, $display)
     {
         $display->centerTxt("Vous pouvez :" . PHP_EOL . PHP_EOL);
         $display->centerTxt("1 - Recommencer le combat" . PHP_EOL);
@@ -514,13 +549,17 @@ class Display
 
         switch ($awser) {
             case "1":
-                $main->fight($heros, $enemies, $player, $display);
+                $main->fight($player, $display, $main);
+                $player->setLife(500);
                 break;
             case "2":
-                $main->startGame();
+                $main->startGame($main, $display);
+                unset($player);
+                $main->setNumberOfFight(0);
                 break;
             case "3":
-                //TODO
+                $save = new Save();
+                $save->save($player, $main, $display);
                 break;
             case "4":
                 echo "A bientôt !";
@@ -528,7 +567,7 @@ class Display
                 break;
             default:
                 echo "Veuillez choisir une option valide !";
-                $this->displayEndMenu($main, $heros, $enemies, $player, $display);
+                $this->displayEndMenu($main, $player, $display);
                 break;
         }
     }
@@ -545,11 +584,88 @@ class Display
 }
 
 /**
- * Save class
+ * Save class, for save and open save
  */
 class Save
 {
-    //TODO
+    /**
+     * save method for save the game and all progress
+     */
+    public function save($player, $main, $display)
+    {
+        //Ask for save name
+        echo "\033\143"; //clear the screen
+        $nameSave = readline("Entrez le nom de la sauvegarde : ");
+
+        //Check if the save name is not empty, or if the save name is not already used
+        while (empty($nameSave) || file_exists($nameSave . ".txt")) {
+            $display->centerTxt("Veuillez entrer un nom de sauvegarde valide !");
+            $nameSave = readline("Entrez le nom de la sauvegarde : ");
+        }
+
+        //Create save file
+        $save = fopen($nameSave . ".txt", "w");
+
+        //Save player info's
+        fwrite($save, $player->getName() . "\n");
+        fwrite($save, $player->getLife() . "\n");
+        fwrite($save, $player->getPower() . "\n");
+        fwrite($save, $player->getXp() . "\n");
+        fwrite($save, $player->getLevel() . "\n");
+
+        //Save number of fight
+        fwrite($save, $main->getNumberOfFight() . "\n");
+
+        fclose($save);
+
+        $display->centerTxt("La partie a bien été sauvegardée !");
+    }
+
+    /**
+     * openSave method for open a save and load all progress
+     */
+    public function openSave($main, $display)
+    {
+        //Display all save
+        echo "\033\143"; //clear the screen
+        $display->centerTxt("Listes des sauvegardes :" . PHP_EOL);
+        foreach (glob("*.txt") as $fileName) {
+
+            $display->centerTxt($fileName . "\n");
+        }
+
+        //Ask for save name
+        $nameSave = readline($display->centerTxt("Entrez le nom de la sauvegarde : "));
+
+
+        //Check if the save name is not empty, or if the save name exist
+        while (empty($nameSave) || !file_exists($nameSave . ".txt")) {
+            echo "\033\143"; //clear the screen
+            $display->centerTxt("Veuillez entrer un nom de sauvegarde valide !");
+            //Display all save
+            foreach (glob("*.txt") as $fileName) {
+                $display->centerTxt(PHP_EOL . "Listes des sauvegardes :" . PHP_EOL . PHP_EOL);
+                $display->centerTxt($fileName . "\n");
+            }
+
+            $nameSave = readline($display->centerTxt(PHP_EOL . "Entrez le nom de la sauvegarde : "));
+        }
+
+        //Open save file
+        $save = fopen($nameSave . ".txt", "r");
+
+        //Load player info's
+        $player = new Hero(fgets($save), fgets($save), fgets($save), fgets($save), fgets($save));
+
+        //Load number of fight
+        $main->setNumberOfFight(fgets($save));
+
+        fclose($save);
+
+        $main->game($player, $display, $main);
+
+        return $player;
+    }
 }
 
 /**
@@ -626,17 +742,17 @@ class Welcome
         $display->centerTxt("3 - Quitter" . PHP_EOL . PHP_EOL);
         $awser = readline("Que voulez-vous faire ? : ");
 
-
+        global $main; //It's a global variable for use everywhere
+        $main = new Main();
 
         switch ($awser) {
             case "1":
                 echo "\033\143"; //clear the screen
-                global $main; //It's a global variable for use e
-                $main = new Main();
                 $main->startGame($main, $display);
                 break;
             case "2":
-                //TODO
+                $openSave = new Save();
+                $openSave->openSave($main, $display);
                 break;
             case "3":
                 echo "A bientôt !";
