@@ -38,7 +38,7 @@ class Character
 class Hero extends Character
 {
     private $xp = 0;
-    private $level = 10;
+    private $level = 1;
 
     public function __construct($name, $life, $power)
     {
@@ -101,7 +101,7 @@ class Hero extends Character
      * 
      * @param Enemy $enemy
      */
-    public function atack(Enemy $enemy, $multiplier)
+    public function atack($enemy, $multiplier)
     {
         $enemy->setLife($enemy->getLife() - $multiplier * $this->power);
     }
@@ -113,8 +113,7 @@ class Hero extends Character
     {
         if ($this->life <= 0) {
             echo "\033\143"; //clear the screen
-            echo PHP_EOL . "Vous êtes mort !" . PHP_EOL . PHP_EOL;
-
+            $display->centerTxt(PHP_EOL . "Vous êtes mort !" . PHP_EOL . PHP_EOL);
             $display->displayEndMenu($heros, $enemies, $player, $display, $enemy);
         }
     }
@@ -129,6 +128,10 @@ class Enemy extends Character
     public function __construct($name, $life, $power)
     {
         parent::__construct($name, $life, $power);
+    }
+
+    public function __destruct()
+    {
     }
 
     //All get and set for Enemy class
@@ -160,11 +163,11 @@ class Enemy extends Character
     /**
      * Atack method
      * 
-     * @param Hero $hero
+     * @param Hero player
      */
-    public function atack(Hero $hero, $diviser)
+    public function atack($player, $diviser)
     {
-        $hero->setLife($hero->getLife() - $this->power * $diviser);
+        $player->setLife($player->getLife() - $this->power * $diviser);
     }
 
     /**
@@ -180,9 +183,8 @@ class Enemy extends Character
     /**
      * Die method
      */
-    public function die(Enemy $enemy, $player, $main)
+    public function die($player, $main)
     {
-        echo PHP_EOL . "Vous avez tué l'ennemi : " . $enemy->getName() . "!" . PHP_EOL;
         $main->xpAndLevel($player);
     }
 }
@@ -194,10 +196,10 @@ class Main
     /**
      * startGame method for start a new game
      */
-    public function startGame($main)
+    public function startGame($main, $display)
     {
-        $display = new Display();
-        $player = $this->createCharacter();
+
+        $player = $this->createCharacter($display);
 
         //HARD CODE HERO AND ENEMY FOR TEST
         $goku = new Hero("Goku", 100, 20);
@@ -212,20 +214,23 @@ class Main
     /**
      * createCharacter method for create a Hero
      */
-    public function createCharacter()
+    public function createCharacter($display)
     {
         echo "\033\143"; //clear the screen
-        echo "Nouvelle partie !" . PHP_EOL . PHP_EOL;
-        echo "Entrez le nom de votre héros : ";
+        $display->centerTxt("Nouvelle partie !" . PHP_EOL . PHP_EOL);
+        $display->centerTxt("Entrez le nom de votre héros : ");
         $name = readline();
 
-        $player = new Hero($name, 10000, 20);
+        $player = new Hero($name, 1000, 20);
 
         echo "\033\143"; //clear the screen
-        echo "Vous avez créé votre héro : " . $player->getName() . PHP_EOL . PHP_EOL;
-        echo "Vous allez devoir affronter des vagues d'ennemis, les vagues seront de plus en plus difficiles." . PHP_EOL . PHP_EOL;
-        echo "Lors de vos combats, vous gagnerez de l'expérience qui vous permet de monter en niveau afin de débloquer de nouvelle attaque !" . PHP_EOL . PHP_EOL;
-        echo "Bonne chance ! " . PHP_EOL . PHP_EOL;
+        $display->centerTxt("Bienvenue dans le jeu " . $player->getName() . " !" . PHP_EOL . PHP_EOL);
+        $display->centerTxt("Vous avez créé votre héro : " . $player->getName() . PHP_EOL . PHP_EOL);
+        $display->centerTxt("Vous allez devoir affronter des vagues d'ennemis, les vagues seront de plus en plus difficiles." . PHP_EOL . PHP_EOL);
+        $display->centerTxt("lors de vos combats, vous gagnerez de l'expérience qui vous permet de monter en niveau afin de débloquer de nouvelle attaque !" . PHP_EOL . PHP_EOL);
+        $display->centerTxt("Bonne chance " . PHP_EOL . PHP_EOL);
+        $display->centerTxt("Vous êtes dans la forêt, vous entendez des bruits de pas qui se rapprochent..." . PHP_EOL . PHP_EOL);
+
         echo "Appuyez sur entrée pour commencer votre aventure...";
         readline();
         return $player;
@@ -236,11 +241,16 @@ class Main
      */
     public function game($player, $display, $heros, $enemies, $main)
     {
+        //Check if player win
+        if ($this->numberOfFight == 4) {
+            $this->win($heros, $enemies, $player, $display, $main);
+        }
 
         echo "\033\143"; //clear the screen
-        echo "1 - Combattre" . PHP_EOL;
-        echo "2 - Fruire dans la forêt " . PHP_EOL . PHP_EOL;
-        $awser = readline("Que voulez-vous faire ? : ");
+        $display->centerTxt("1 - Combattre" . PHP_EOL . PHP_EOL);
+        $display->centerTxt("2 - Fuire dans la forêt" . PHP_EOL . PHP_EOL);
+        $display->centerTxt("Que voulez-vous faire ? : ");
+        $awser = readline();
 
         switch ($awser) {
             case "1":
@@ -248,14 +258,47 @@ class Main
                 $this->fight($player, $display, $heros, $enemies, $main);
                 break;
             case "2":
-                echo "Vous êtes lache !";
+                $display->centerTxt("Vous êtes lache !");
                 exit;
                 break;
             default:
-                echo "Veuillez choisir une option valide !";
+                $display->centerTxt("Veillez choisir une option valide !");
                 $this->game($player, $display, $heros, $enemies, $main);
                 break;
         }
+    }
+
+    /**
+     * createEnemy method for create a enemy
+     */
+    function createEnemy($type, $count)
+    {
+        $enemies = [];
+
+        switch ($type) {
+            case 'Freezer':
+                for ($i = 0; $i < $count; $i++) {
+                    $enemies[] = new Enemy("Freezer", 100, 20);
+                }
+                break;
+
+            case 'Cell':
+                for ($i = 0; $i < $count; $i++) {
+                    $enemies[] = new Enemy("Cell", 200, 30);
+                }
+                break;
+
+            case 'JidBuu':
+                for ($i = 0; $i < $count; $i++) {
+                    $enemies[] = new Enemy("JidBuu", 300, 40);
+                }
+                break;
+
+            default:
+                echo "Type d'ennemi non reconnu.";
+                break;
+        }
+        return $enemies;
     }
 
     /**
@@ -268,55 +311,28 @@ class Main
      */
     public function fight($player, $display, $heros, $enemies, $main)
     {
-        $enemysList = [];
-
-        /**
-         * createEnemy method for create a enemy
-         */
-        function createEnemy($type, $count)
-        {
-            $enemies = [];
-
-            switch ($type) {
-                case 'Freezer':
-                    for ($i = 0; $i < $count; $i++) {
-                        $enemies[] = new Enemy("Freezer", 100, 20);
-                    }
-                    break;
-
-                case 'Cell':
-                    for ($i = 0; $i < $count; $i++) {
-                        $enemies[] = new Enemy("Cell", 200, 30);
-                    }
-                    break;
-
-                case 'JidBuu':
-                    for ($i = 0; $i < $count; $i++) {
-                        $enemies[] = new Enemy("JidBuu", 300, 40);
-                    }
-                    break;
-
-                default:
-                    echo "Type d'ennemi non reconnu.";
-                    break;
-            }
-
-            return $enemies;
-        }
+        $enemiesList = [];
 
         //Increase number of fight and add enemy to list
         switch ($this->numberOfFight) {
             case 0:
-                array_push($enemysList, createEnemy('Freezer', 1));
+                $freezer = $this->createEnemy('Freezer', 1);
+                $enemiesList = array_merge($freezer);
                 break;
             case 1:
-                array_push($enemysList, createEnemy('Cell', 1));
+                $cell = $this->createEnemy('Cell', 1);
+                $enemiesList =  array_merge($cell);
                 break;
             case 2:
-                array_push($enemysList, createEnemy('Freezer', 1), createEnemy('Cell', 1));
+                $freezer = $this->createEnemy('Freezer', 1);
+                $cell = $this->createEnemy('Cell', 1);
+                $enemiesList =  array_merge($freezer, $cell);
                 break;
             case 3:
-                array_push($enemysList, createEnemy('Freezer', 1), createEnemy('Cell', 1), createEnemy('JidBuu', 1));
+                $freezer = $this->createEnemy('Freezer', 1);
+                $cell = $this->createEnemy('Cell', 1);
+                $jidBuu = $this->createEnemy('JidBuu', 1);
+                $enemiesList =  array_merge($freezer, $cell, $jidBuu);
                 break;
         }
 
@@ -327,65 +343,77 @@ class Main
 
             //Display enemy list
             echo "\033\143"; //clear the screen
-            $display->displayPlayerStat($player);
-            echo "Vous allez  devoir combattre : " . PHP_EOL . PHP_EOL;
-            $display->displayEnemyStat($enemysList);
+            $display->displayPlayerStat($player, $display);
+            $display->centerTxt("Vous allez  devoir combattre : " . PHP_EOL . PHP_EOL);
+            $display->displayEnemyStat($enemiesList, $display);
 
             //Choose a enemy to fight, only if enemy list is more than 1
-            if (sizeof($enemysList) > 1) {
-                $toAttack = readline(PHP_EOL . "Quel ennemi voulez-vous combattre ? : ");
-                $enemy = $enemysList[$toAttack - 1];
-                echo "Vous avez choisi de combattre : " . $enemy->getName() . PHP_EOL;
+            if (sizeof($enemiesList) > 1) {
+                $display->centerTxt(PHP_EOL . "Quel ennemi voulez-vous combattre ? :");
+                $toAttack = readline();
+                //check if the choice is valid
+                while ($toAttack > sizeof($enemiesList) || $toAttack < 1) {
+                    $display->centerTxt("Veuillez choisir une option valide !");
+                    $display->centerTxt(PHP_EOL . "Quel ennemi voulez-vous combattre ? : ");
+                    $toAttack = readline();
+                }
+                $enemy = $enemiesList[$toAttack - 1];
+                $display->centerTxt("Vous avez choisi de combattre : " . $enemy->getName() . PHP_EOL . PHP_EOL);
             } else {
-                $enemy = $enemysList[0];
+                //Update enemy if enemy list is 1
+                $enemiesList = array_values($enemiesList);
+                $enemy = $enemiesList[0];
             }
 
             //Choice action for fight
-            echo PHP_EOL . "Sélectionner une action : " . PHP_EOL . PHP_EOL;
+            $display->centerTxt(PHP_EOL . "Sélectionner une action : " . PHP_EOL . PHP_EOL);
 
-            echo "1 - Dragon Fist" . PHP_EOL;
-            echo "2 - Kamehameha (niveau 2 requis)" . PHP_EOL;
-            echo "3 - Energy Shield" . PHP_EOL;
-            $choice = readline("Que voulez-vous faire ? : ");
+            $display->centerTxt("1 - Dragon Fist" . PHP_EOL);
+            $display->centerTxt("2 - Kamehameha (niveau 2 requis)" . PHP_EOL);
+            $display->centerTxt("3 - Energy Shield" . PHP_EOL);
+
+            $choice = readline("Que voulez-vous faire?");
 
             switch ($choice) {
                 case 1:
                     $multiplier = 1;
                     $diviser = 1;
                     $player->atack($enemy, $multiplier);
-                    $this->allAttack($enemies, $player, $diviser);
+                    $this->allAttack($enemiesList, $player, $diviser, $display);
                     break;
                 case 2:
                     if ($player->getLevel() >= 2) {
-                        $multiplier = 1.2;
+                        $multiplier = 2.5;
                         $diviser = 1;
                         $player->atack($enemy, $multiplier);
-                        $this->allAttack($enemies, $player, $diviser);
+                        $this->allAttack($enemiesList, $player, $diviser, $display);
                     } else {
-                        echo "Vous n'avez pas le niveau requis ! (niveau 2)";
+                        $display->centerTxt("Vous n'avez pas le niveau requis ! (niveau 2)");
                     }
                     break;
                 case 3:
                     $diviser = 1.3;
-                    $this->allAttack($enemies, $player, $diviser);
+                    $this->allAttack($enemiesList, $player, $diviser, $display);
                     break;
                 default:
-                    echo "Veuillez choisir une option valide !";
+                    $display->centerTxt("Veuillez choisir une option valide !");
                     break;
             }
 
             //Check if enemy is dead
-            foreach ($enemysList as $enemy) {
+            foreach ($enemiesList as $enemy) {
                 if ($enemy->getLife() <= 0) {
-                    $key = array_search($enemy, $enemysList);
-                    unset($enemysList[$key]);
-                    $enemy->die($enemy, $player, $main);
+                    $key = array_search($enemy, $enemiesList);
+                    unset($enemiesList[$key]);
+                    //Update array index
+                    $enemiesList = array_values($enemiesList);
+                    $enemy->die($player, $main);
                 }
             }
 
             //Check if all enemy is dead
-            if (empty($enemysList)) {
-                $this->numberOfFight = +1;
+            if (empty($enemiesList)) {
+                $this->numberOfFight++;
                 $this->game($player, $display, $heros, $enemies, $main);
                 $isFight = false;
             }
@@ -395,18 +423,16 @@ class Main
                 $isFight = false;
                 $player->die($heros, $enemies, $player, $display, $enemy);
             }
-
-            //Check if player win
-            $this->win($heros, $enemies, $player, $display, $enemy);
         }
     }
 
     /**
      * allAttack method for attack all enemy
      */
-    private function allAttack($enemies, $player, $diviser)
+    private function allAttack($enemiesList, $player, $diviser, $display)
     {
-        foreach ($enemies as $enemy) {
+        foreach ($enemiesList as $enemy) {
+            $display->centerTxt($enemy->getName() . " vous attaque !" . PHP_EOL);
             $enemy->atack($player, $diviser);
         }
     }
@@ -419,6 +445,7 @@ class Main
         $player->setXp($player->getXp() + 50);
         if ($player->getXp() >= 100) {
             $player->setLevel($player->getLevel() + 1);
+            $player->setPower($player->getPower() + 10);
             $player->setXp(0);
         }
     }
@@ -426,13 +453,12 @@ class Main
     /**
      * win method for check if player finish the game
      */
-    public function win($heros, $enemies, $player, $display, $enemy)
+    public function win($heros, $enemies, $player, $display, $main)
     {
-        if ($this->numberOfFight == 4) {
-            echo "Vous avez gagné !";
-            $display->displayEndMenu($heros, $enemies, $player, $display, $enemy);
-            exit;
-        }
+        echo "\033\143"; //clear the screen
+        $display->centerTxt("Vous avez gagné!" . PHP_EOL . PHP_EOL);
+        $display->displayEndMenu($main, $heros, $enemies, $player, $display);
+        exit;
     }
 }
 
@@ -444,30 +470,31 @@ class Display
     /**
      * Display player stat
      * 
-     * @param Hero $hero
+     * @param Hero player
      */
-    public function displayPlayerStat($player)
+    public function displayPlayerStat($player, $display)
     {
-        echo PHP_EOL . "Vos informations : " . PHP_EOL;
-        echo PHP_EOL . "Nom : " . $player->getName() . PHP_EOL;
-        echo "Vie : " . $player->getLife() . PHP_EOL;
-        echo "Puissance : " . $player->getPower() . PHP_EOL;
-        echo "Niveau : " . $player->getLevel() . PHP_EOL;
-        echo "Expérience : " . $player->getXp() . " / 100" . PHP_EOL . PHP_EOL;
+        $display->centerTxt("Vos informations :" . PHP_EOL);
+        $display->centerTxt("Nom : " . $player->getName() . PHP_EOL);
+        $display->centerTxt("Vie : " . $player->getLife() . PHP_EOL);
+        $display->centerTxt("Puissance : " . $player->getPower() . PHP_EOL);
+        $display->centerTxt("Niveau : " . $player->getLevel() . PHP_EOL);
+        $display->centerTxt("Expérience : " . $player->getXp() . " / 100" . PHP_EOL . PHP_EOL);
     }
 
     /**
      * Display enemy list
      * 
-     * @param Enemy $enemysList
+     * @param Enemy $enemiesList
      */
-    public function displayEnemyStat($enemysList)
+    public function displayEnemyStat($enemiesList, $display)
     {
         // Vérifiez si la liste est un tableau et n'est pas vide
-        if (is_array($enemysList) && !empty($enemysList)) {
-            for ($i = 0; $i < count($enemysList); $i++) {
-                $s = $i + 1;
-                echo "$s - " . $enemysList[$i]->getName() . " " . $enemysList[$i]->getLife() . " PV" . PHP_EOL;
+        if (!empty($enemiesList)) {
+            $i = 1;
+            foreach ($enemiesList as $enemy) {
+                $display->centerTxt($i . " - " . $enemy->getName() . " " . $enemy->getLife() . " PV" . PHP_EOL);
+                $i++;
             }
         }
     }
@@ -475,14 +502,14 @@ class Display
     /**
      * displayEndMenu method for display end menu (player is dead or win)
      */
-    public function displayEndMenu($main, $heros, $enemies, $player, $display, $enemy)
+    public function displayEndMenu($main, $heros, $enemies, $player, $display)
     {
-        echo "Vous pouvez :" . PHP_EOL . PHP_EOL;
+        $display->centerTxt("Vous pouvez :" . PHP_EOL . PHP_EOL);
+        $display->centerTxt("1 - Recommencer le combat" . PHP_EOL);
+        $display->centerTxt("2 - Recommencer une partie" . PHP_EOL);
+        $display->centerTxt("3 - Sauvegarder la partie" . PHP_EOL);
+        $display->centerTxt("4 - Quitter" . PHP_EOL);
 
-        echo "1 - Recommencer le combat" . PHP_EOL;
-        echo "2 - Recommencer une partie" . PHP_EOL;
-        echo "3 - Sauvegarder la partie" . PHP_EOL;
-        echo "4 - Quitter" . PHP_EOL;
         $awser = readline("Que voulez-vous faire ? : ");
 
         switch ($awser) {
@@ -501,9 +528,19 @@ class Display
                 break;
             default:
                 echo "Veuillez choisir une option valide !";
-                $this->displayEndMenu($main, $heros, $enemies, $player, $display, $enemy);
+                $this->displayEndMenu($main, $heros, $enemies, $player, $display);
                 break;
         }
+    }
+
+    /**
+     * centerTxt method for center text
+     */
+    public function centerTxt($txt)
+    {
+        $terminal_width = exec('tput cols'); //get the terminal width
+        $spaces_before = max(0, floor(($terminal_width - strlen($txt)) / 2)); //calculate the number of spaces before the text
+        echo str_repeat(' ', $spaces_before) . $txt . PHP_EOL;
     }
 }
 
@@ -521,24 +558,82 @@ class Save
 class Welcome
 {
 
+
     /**
      * welcome method for display welcome menu
      */
-    public function welcome()
+    public function welcome($display)
     {
         echo "\033\143"; //clear the screen
-        echo "Bienvenue dans Dragon Ball CLI by Enzo & Téo !" . PHP_EOL . PHP_EOL;
-        echo "1 - Creér une partie" . PHP_EOL;
-        echo "2 - Charger une partie" . PHP_EOL;
-        echo "3 - Quitter" . PHP_EOL . PHP_EOL;
+
+
+        $image = "                                         
+                                                                                █████████             
+                                                                        █   █████████                
+                                                                        ███ ██████████                 
+                                                                        ██████████████ █ ░░░            
+                                                                    ██████████████████ ██░░░░░          
+                                                        █     ████████████████████████████▓▒▒          
+                                                        ███   █████████████████████████░░▓▓▓            
+                                                        ███  ███████████████████████████░░▓             
+                                                    ███████████████████████████████████              
+                                                    █   ███████████████████████████████████             
+                                                        █████████████████████▓░░░██████████             
+                                                        ██████████████████████░░░░███████              
+                                                        ████████████▒█░░░░█████░██░░█████               
+                                                    ████████░█████░░█░░░░░░███▒░░██▒░                
+                                                        ██████░░░███░░░░░░░░░░█▓░░█░░▒░                
+                                                        ███████░░░░░██░░░░░░░░█░░░░░░░▒░▒               
+                                                        ██████░░░█████░░░░░░██░░░░░▒░░▒▒              
+                                                        ███████░░░░░░░░██░░░░░░░░░░▒▒░░░                                             
+                                                        ███░░█░░░░░░░░░░░░░░░░░░░░▒▒░▒░              
+                                                        ███████░░░░░░░▓░▒░░░░░▓░░░░░░░▒░▒█              
+                                                        ██████░░░▒░░░░░░░░░▓▒▒▒▒░░░█░░░░▒█             
+                                                        ██████░░░░░░░░░░░░░░░░▒█░░░░░░░░▒██             
+                                                        ███████░░░░░░░░▒░░░░░░░░░░░░░░░▒▒██             
+                                                        ███████░▓░░░░░░░░░░░░░░░░░░░░▒░░▒█              
+                                                        █████░░░░░░░░░█░░░░░░░░░░░░░▒████             
+                                                        ████▓░░░░░░░░░░░▒▒░░░░░░░░████▓██            
+                                                            ██▓▓▓▓▓▓▓▓░░▓░░░░░░░░░░████▓███████        
+                                                            ▓▓▓▓▓░░░░░░░░████▓▓▓███▓▓▓██▓▓▓████      
+                                                            ▓▓░░░░░░░░░░░░▒██▓▓██▓▓██████▓▓▓▓████    
+                                                            ▓██░░░░░░░░░░░░░░░▒▓▓░░░░░█▓▓▓▓▓▓▓▓███   
+                                                                ██░░░░░░░░░░░░░▓▓▓░░░░░░░░▓▓▓▓▓▓▓▓██   
+                                                                █▓█░░░░░░░░░░▓▓▓░░░░░░░░▒░▓▓▓▓▓▓███   
+                                                                    ░░░░░░░░▓▓▓░░░░░░░░░▒▓▓▓▓▓▓▓███   
+                                                                        ▒░░░░▓▓▓░▓░░░░░░█▓██▓▓▓▓███    
+                                                                        ░░░░▓▓░░▒░░░░█ ██▓▓▓███      
+                                                                            ▓███▓▓░░░░░███     █▒▓      
+                                                                            ▓▓█▓▓▓▓▓▓▓█████             
+                                                                            ▓▓█▓▓▓▓▓▓▓██████           
+                                                                            ▓▓▓▓▓▓▓▓▓███▓███          
+                                                                            ▓▓▓▓▓▓▓▓█▓█▓███          
+                                                                                ▓▓▓▓▓▓▓██▓██           
+                                                                                █▓▓▓▓▓█▓██▓           
+                                                                                ▓▓▓▓▓▓▓█▒▓▓          
+                                                                                        ▒▒▒▒▒▒         
+                                                                                        ▒▒▒▒▓        
+                                                                                            █▒▓      " . PHP_EOL . PHP_EOL;
+
+
+        $display->centerTxt("Bienvenue dans Dragon Ball CLI by Enzo & Téo !");
+        echo $image;
+        $enter = readline("Appuyez sur entrée pour continuer : ");
+        echo "\033\143"; //clear the screen
+
+        $display->centerTxt("1 - Creér une partie" . PHP_EOL);
+        $display->centerTxt("2 - Charger une partie" . PHP_EOL);
+        $display->centerTxt("3 - Quitter" . PHP_EOL . PHP_EOL);
         $awser = readline("Que voulez-vous faire ? : ");
+
+
 
         switch ($awser) {
             case "1":
                 echo "\033\143"; //clear the screen
                 global $main; //It's a global variable for use e
                 $main = new Main();
-                $main->startGame($main);
+                $main->startGame($main, $display);
                 break;
             case "2":
                 //TODO
@@ -549,11 +644,11 @@ class Welcome
                 break;
             default:
                 echo "Veuillez choisir une option valide !";
-                $this->welcome();
+                $this->welcome($display);
                 break;
         }
     }
 }
-
+$display = new Display();
 $welcome = new Welcome();
-$welcome->welcome();
+$welcome->welcome($display);
