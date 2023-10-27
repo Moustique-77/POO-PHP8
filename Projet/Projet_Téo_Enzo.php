@@ -39,6 +39,7 @@ class Hero extends Character
 {
     private $xp = 0;
     private $level = 1;
+    private $numberOfFight = 0;
 
     public function __construct($name, $life, $power)
     {
@@ -70,6 +71,11 @@ class Hero extends Character
     {
         return $this->level;
     }
+    public function getNumberOfFight()
+    {
+        return $this->numberOfFight;
+    }
+
 
     public function setName($name)
     {
@@ -94,6 +100,11 @@ class Hero extends Character
     public function setLevel($level)
     {
         $this->level = $level;
+    }
+
+    public function setNumberOfFight(int $numberOfFight)
+    {
+        $this->numberOfFight = $numberOfFight;
     }
 
     /**
@@ -191,23 +202,6 @@ class Enemy extends Character
 
 class Main
 {
-    private $numberOfFight = 0;
-
-    public function __construct()
-    {
-        $this->numberOfFight = 0;
-    }
-
-    public function getNumberOfFight()
-    {
-        return $this->numberOfFight;
-    }
-
-    public function setNumberOfFight($numberOfFight)
-    {
-        $this->numberOfFight = $numberOfFight;
-    }
-
     /**
      * startGame method for start a new game
      */
@@ -229,7 +223,7 @@ class Main
     /**
      * createCharacter method for create a Hero
      */
-    public function createCharacter($display)
+    private function createCharacter($display)
     {
         echo "\033\143"; //clear the screen
         $display->centerTxt("Nouvelle partie !" . PHP_EOL . PHP_EOL);
@@ -257,8 +251,8 @@ class Main
     public function game($player, $display, $main)
     {
         //Check if player win
-        if ($this->numberOfFight == 4) {
-            $this->win($display, $main);
+        if ($player->getNumberOfFight() == 4) {
+            $this->win($display, $main, $player);
         }
 
         echo "\033\143"; //clear the screen
@@ -335,7 +329,7 @@ class Main
         $enemiesList = [];
 
         //Increase number of fight and add enemy to list
-        switch ($this->numberOfFight) {
+        switch ($player->getNumberOfFight()) {
             case 0:
                 $freezer = $this->createEnemy('Freezer', 1);
                 $enemiesList = array_merge($freezer);
@@ -434,7 +428,7 @@ class Main
 
             //Check if all enemy is dead
             if (empty($enemiesList)) {
-                $this->numberOfFight++;
+                $player->setNumberOfFight($player->getNumberOfFight() + 1);
                 $this->game($player, $display,  $main);
                 $isFight = false;
             }
@@ -474,7 +468,7 @@ class Main
     /**
      * win method for check if player finish the game
      */
-    public function win($display, $main)
+    private function win($display, $main, $player)
     {
         echo "\033\143"; //clear the screen
         $display->centerTxt("Vous avez gagné!" . PHP_EOL . PHP_EOL);
@@ -486,7 +480,7 @@ class Main
 
         switch ($awser) {
             case "1":
-                $main->setNumberOfFight(0);
+                $player->setNumberOfFight(0);
                 $main->startGame($main, $display);
                 break;
             case "2":
@@ -612,13 +606,11 @@ class Save
         fwrite($save, $player->getPower() . "\n");
         fwrite($save, $player->getXp() . "\n");
         fwrite($save, $player->getLevel() . "\n");
-
-        //Save number of fight
-        fwrite($save, $main->getNumberOfFight() . "\n");
+        fwrite($save, $player->getNumberOfFight() . "\n");
 
         fclose($save);
 
-        $display->centerTxt("La partie a bien été sauvegardée !");
+        echo (PHP_EOL . "La partie a bien été sauvegardée !" . PHP_EOL);
     }
 
     /**
@@ -655,10 +647,7 @@ class Save
         $save = fopen($nameSave . ".txt", "r");
 
         //Load player info's
-        $player = new Hero(fgets($save), fgets($save), fgets($save), fgets($save), fgets($save));
-
-        //Load number of fight
-        $main->setNumberOfFight(fgets($save));
+        $player = new Hero(fgets($save), fgets($save), fgets($save), fgets($save), fgets($save), fgets($save));
 
         fclose($save);
 
@@ -673,15 +662,12 @@ class Save
  */
 class Welcome
 {
-
-
     /**
      * welcome method for display welcome menu
      */
     public function welcome($display)
     {
         echo "\033\143"; //clear the screen
-
 
         $image = "                                         
                                                                                 █████████             
