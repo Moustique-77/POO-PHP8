@@ -1,0 +1,25 @@
+-- Table des commandes
+CREATE TABLE Commandes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    date_commande DATE DEFAULT CURRENT_TIMESTAMP,
+    montant_total DECIMAL(10, 2) NOT NULL
+);
+
+-- Table de liaison entre les commandes et les articles
+CREATE TABLE Articles_Commandes (
+    id_commande INT,
+    id_article INT,
+    quantite INT NOT NULL,
+    FOREIGN KEY (id_commande) REFERENCES Commandes(id),
+    FOREIGN KEY (id_article) REFERENCES Articles(id)
+);
+
+-- Table des articles
+CREATE TABLE Articles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nom VARCHAR(100) NOT NULL,
+    prix_unitaire DECIMAL(10, 2) NOT NULL,
+    quantite_disponible INT NOT NULL,
+    couleur VARCHAR(50),
+    taille VARCHAR(10)
+);
