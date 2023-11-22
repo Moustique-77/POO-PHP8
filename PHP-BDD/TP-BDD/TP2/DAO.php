@@ -13,7 +13,7 @@ class NiveauDAO
     public function AddNiveau($niveau)
     {
         try {
-            $requete = $this->bdd->prepare("INSERT INTO niveau (nom, difficulte, etoiles_requises, etoiles_disponibles) VALUES (:nom, :difficulte, :etoiles_requises, :etoiles_disponibles)");
+            $requete = $this->bdd->prepare("INSERT INTO niveaux (nom, difficulte, etoiles_requises, etoiles_disponibles) VALUES (:nom, :difficulte, :etoiles_requises, :etoiles_disponibles)");
 
             $requete->excute([$niveau->getNom(), $niveau->getDifficulte(), $niveau->getEtoilesRequises(), $niveau->getEtoilesDisponibles()]);
 
@@ -29,7 +29,7 @@ class NiveauDAO
     public function DisplayNiveau()
     {
         try {
-            $listeNiveau = $this->bdd->query("SELECT * FROM niveau");
+            $listeNiveau = $this->bdd->query("SELECT * FROM niveaux");
             return $listeNiveau->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             echo "Erreur lors de l'affichage des niveaux: " . $e->getMessage();
@@ -42,11 +42,26 @@ class NiveauDAO
     public function GetNiveauParId($id)
     {
         try {
-            $requete = $this->bdd->prepare("SELECT * FROM niveau WHERE id = :id");
+            $requete = $this->bdd->prepare("SELECT * FROM niveaux WHERE id = :id");
             $requete->execute([$id]);
             return $requete->fetch(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             echo "Erreur lors de la récupération du niveau: " . $e->getMessage();
+            return false;
+        }
+    }
+
+    //Get niveau par etoiles_requises
+    public function DisplayNiveauParEtoiles($etoiles)
+    {
+        try {
+            $requete = $this->bdd->prepare("SELECT * FROM niveaux WHERE etoiles_requises <= :etoiles");
+
+            $requete->bindParam(':etoiles', $etoiles, PDO::PARAM_INT);
+            $requete->execute();
+            return $requete->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            echo "Erreur lors de la récupération des niveaux: " . $e->getMessage();
             return false;
         }
     }
@@ -65,7 +80,7 @@ class PersonnageDAO
     public function AddPersonnage($personnage)
     {
         try {
-            $requete = $this->bdd->prepare("INSERT INTO personnage (nom) VALUES (:nom)");
+            $requete = $this->bdd->prepare("INSERT INTO personnages (nom) VALUES (:nom)");
             $requete->execute([$personnage->getNom()]);
             return true;
         } catch (PDOException $e) {
@@ -75,14 +90,28 @@ class PersonnageDAO
     }
 
     //Get personnage par id
-    public function GetPersonnageParId($id)
+    public function GetPersonnage()
     {
         try {
-            $requete = $this->bdd->prepare("SELECT * FROM personnage WHERE id = :id");
-            $requete->execute([$id]);
+            $requete = $this->bdd->prepare("SELECT * FROM personnages");
+            $requete->execute();
             return $requete->fetch(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             echo "Erreur lors de la récupération du personnage: " . $e->getMessage();
+            return false;
+        }
+    }
+
+    //Update etoiles_collectees
+    public function UpdateEtoilesCollectees($etoiles)
+    {
+        try {
+            $requete = $this->bdd->prepare("UPDATE personnages SET etoiles_collectees = :etoiles WHERE id = 1");
+            $requete->bindParam(':etoiles', $etoiles, PDO::PARAM_INT);
+            $requete->execute();
+            return true;
+        } catch (PDOException $e) {
+            echo "Erreur lors de la mise à jour des étoiles collectées: " . $e->getMessage();
             return false;
         }
     }

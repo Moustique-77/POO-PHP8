@@ -28,4 +28,10 @@ class Personnage
     {
         return $this->etoiles_collectee;
     }
+
+    //Setters
+    public function setEtoilesCollectee($etoiles_collectee)
+    {
+        $this->etoiles_collectee = $etoiles_collectee;
+    }
 }
