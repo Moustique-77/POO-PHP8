@@ -35,3 +35,6 @@ class Personnage
         $this->etoiles_collectee = $etoiles_collectee;
     }
 }
+
+?>
+//hello

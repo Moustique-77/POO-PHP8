@@ -56,3 +56,6 @@ $joueur->setEtoilesCollectee($joueur->getEtoilesCollectee() + $etoilesARecuperer
 //Mise à jour du joueur
 $personnageDAO->UpdateEtoilesCollectees($joueur->getEtoilesCollectee());
 echo "Vous avez récupéré " . $etoilesARecuperer . " étoiles !" . PHP_EOL . PHP_EOL;
+
+?>
+//hello

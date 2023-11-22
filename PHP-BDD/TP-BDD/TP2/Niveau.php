@@ -36,3 +36,5 @@ class Niveau
         return $this->etoiles_disponible;
     }
 }
+?>
+//hello

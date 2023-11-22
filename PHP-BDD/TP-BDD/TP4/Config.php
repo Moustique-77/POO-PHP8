@@ -5,7 +5,7 @@ try {
     $hote = "127.0.0.1";
     $utilisateur = "enzo";
     $motDePasse = "221218";
-    $nomDeLaBase = "php_tp2";
+    $nomDeLaBase = "php_tp4";
 
     // Création d'une instance de PDO pour la connexion à la BDD
     $bdd = new PDO("mysql:host=$hote;dbname=$nomDeLaBase", $utilisateur, $motDePasse);
@@ -17,6 +17,3 @@ try {
     echo "Erreur de connexion à la base de données: " . $e->getMessage();
     die();
 }
-
-?>
-//hello
