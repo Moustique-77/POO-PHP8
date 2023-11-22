@@ -9,22 +9,6 @@ class NiveauDAO
         $this->bdd = $bdd;
     }
 
-    //Ajout d'un niveau
-    public function AddNiveau($niveau)
-    {
-        try {
-            $requete = $this->bdd->prepare("INSERT INTO niveaux (nom, difficulte, etoiles_requises, etoiles_disponibles) VALUES (:nom, :difficulte, :etoiles_requises, :etoiles_disponibles)");
-
-            $requete->excute([$niveau->getNom(), $niveau->getDifficulte(), $niveau->getEtoilesRequises(), $niveau->getEtoilesDisponibles()]);
-
-            return true;
-        } catch (PDOException $e) {
-            echo "Erreur lors de l'ajout du niveau: " . $e->getMessage();
-
-            return false;
-        }
-    }
-
     //Liste des niveaux
     public function DisplayNiveau()
     {
@@ -76,20 +60,7 @@ class PersonnageDAO
         $this->bdd = $bdd;
     }
 
-    //Ajout d'un personnage
-    public function AddPersonnage($personnage)
-    {
-        try {
-            $requete = $this->bdd->prepare("INSERT INTO personnages (nom) VALUES (:nom)");
-            $requete->execute([$personnage->getNom()]);
-            return true;
-        } catch (PDOException $e) {
-            echo "Erreur lors de l'ajout du personnage: " . $e->getMessage();
-            return false;
-        }
-    }
-
-    //Get personnage par id
+    //Get personnage
     public function GetPersonnage()
     {
         try {
